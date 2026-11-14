@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import AssistantSubplugins, { childRows, prepareResolution, subplugins } from '../src/bundle.ts'
 
-const profile = { dir: '/p/web', home: '/p', installAnchor: { kind: 'anchor' }, startedBundles: ['@deepseek-ai/dsh-base', '@starsharryzhu/dsh-assistant'] }
+const profile = { dir: '/p/web', home: '/p', installAnchor: { kind: 'anchor' }, startedBundles: ['@deepseek-ai/dsh-base', 'spa-assistant'] }
 
 function fakeBoot() {
   const calls: unknown[] = []
@@ -9,7 +9,7 @@ function fakeBoot() {
     calls,
     boot: async () => ({
       createRuntimeResolution: async (options: unknown) => { calls.push(options); return { resolution: true } },
-      loadProfileDirectory: () => ({ layers: [{ packageName: '@deepseek-ai/dsh-base' }, { packageName: '@starsharryzhu/dsh-assistant' }, { packageName: 'extra' }] }),
+      loadProfileDirectory: () => ({ layers: [{ packageName: '@deepseek-ai/dsh-base' }, { packageName: 'spa-assistant' }, { packageName: 'extra' }] }),
       resolveBundleDir: (_label: string, name: string) => `/dirs/${name}`,
     }),
   }
@@ -37,7 +37,7 @@ describe('the sub-plugin group', () => {
     await prepareResolution(ctx, ['@starsharryzhu/complete-subagent', '@starsharryzhu/im-robot'], boot)
     expect(replaced).toEqual([{ resolution: true }])
     const layers = (calls[0] as { profile: { layers: { packageName: string; packageDir?: string }[] } }).profile.layers
-    expect(layers.map(layer => layer.packageName)).toEqual(['@deepseek-ai/dsh-base', '@starsharryzhu/dsh-assistant', 'extra'])
+    expect(layers.map(layer => layer.packageName)).toEqual(['@deepseek-ai/dsh-base', 'spa-assistant', 'extra'])
     expect(layers[0]?.packageDir).toBe('/dirs/@deepseek-ai/dsh-base')
   })
 

@@ -12,6 +12,7 @@ The vitest specs. Host modules and entry plugins run against fake host services 
 
 ## 3. Contents
 
+- `setup.ts` — restores the `localStorage` global that jsdom defines but vitest does not expose.
 - `helpers.ts` — fake context, tool registry, sessions, agents, and `dshAssisstant` service.
 - `shared.test.ts` — settings readers, each assistant's own settings, worker models, and assistant list planning.
 - `balance.test.ts` — balance queries and the reminder.

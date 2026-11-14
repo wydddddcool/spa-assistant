@@ -26,12 +26,12 @@ describe('the bundle patch', () => {
     expect([...patch.matchAll(/^ {4}- id: (\S+)$/gmu)].map(match => match[1])).toEqual([
       'dsh-assisstant', 'dsh-assisstant-subplugins', 'preset-dsh-assisstant', 'preset-dsh-assisstant-worker',
     ])
-    expect(row('dsh-assisstant')).toContain("name: '@starsharryzhu/dsh-assistant'\n")
+    expect(row('dsh-assisstant')).toContain("name: 'spa-assistant'\n")
   })
 
   it('mounts every dependency in the group, limited to the user presets and guarded against a standalone copy', () => {
     const group = row('dsh-assisstant-subplugins')
-    expect(group).toContain("name: '@starsharryzhu/dsh-assistant/bundle'")
+    expect(group).toContain("name: 'spa-assistant/bundle'")
     expect(group).toContain('group: true')
     for (const name of Object.keys(manifest.dependencies)) expect(group).toContain(`name: '${name}'\n`)
     // The row ids stay unscoped: a standalone install keeps the same id the guard looks for.
@@ -53,7 +53,7 @@ describe('the bundle patch', () => {
     expect(router).toMatch(/dsh-tool-fs'\n {12}config:\n {14}write: false\n {14}edit: false/u)
     // The heartbeat replaces the host's automation tasks, and the policy its clock of browser and device zones.
     for (const absent of ['dsh-tool-schedule', 'dsh-time-context']) expect(router).not.toContain(absent)
-    expect(router).toContain("name: '@starsharryzhu/dsh-assistant/compactor'")
+    expect(router).toContain("name: 'spa-assistant/compactor'")
     expect(router).toContain('role: router')
   })
 
@@ -71,8 +71,8 @@ describe('the bundle patch', () => {
 
 describe('the manifest', () => {
   it('pins the identity, the engine range, and the entries', () => {
-    expect(manifest.name).toBe('@starsharryzhu/dsh-assistant')
-    expect(manifest.version).toBe('0.3.0')
+    expect(manifest.name).toBe('spa-assistant')
+    expect(manifest.version).toBe('0.1.0')
     expect(manifest.license).toBe('MIT')
     expect(manifest.engines.dsh).toBe('>=0.2.1-rc.5 <0.3.0-0')
     const hostRanges = Object.values({ ...manifest.devDependencies, ...manifest.peerDependencies } as Record<string, string>).filter(range => range.includes('0.2.'))

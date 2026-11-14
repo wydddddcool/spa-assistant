@@ -11,5 +11,7 @@ export default defineConfig({
     testTimeout: 20_000,
     // The plugin keeps its state under $DSH_HOME; a spec must never reach the user's own.
     env: { DSH_HOME: mkdtempSync(join(tmpdir(), 'dsa-home-')) },
+    // jsdom defines localStorage, but vitest 4 does not expose it; the browser half reads it directly.
+    setupFiles: ['tests/setup.ts'],
   },
 })

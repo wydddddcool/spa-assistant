@@ -1,7 +1,7 @@
 {
   "name": "spa-assistant",
   "version": "0.1.0",
-  "description": "SPA 自用二开版：保持「前台只对话、活儿在后厨」的随时插话架构。",
+  "description": "SPA 自用二开版：父代理 + 子代理架构的通用助理，前台只对话、活儿交后台子代理，随时可插话。Requires DeepSeek Harness Desktop >=0.2.1-rc.5 <0.3.0",
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",

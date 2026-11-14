@@ -119,7 +119,7 @@ describe('the browser half', () => {
   it('registers the assistant page, its sidebar row, and the settings page', () => {
     const { registrations } = loadClient(fakeForm({}).form)
     expect(registrations.filter(entry => entry.name !== 'tool.call.toolview').map(entry => `${String(entry.name)}:${String(entry.key ?? entry.id)}`).sort()).toEqual([
-      'main:dsh-assisstant', 'plugins.bundle.config:@starsharryzhu/dsh-assistant', 'sidebar.panellist:dsh-assisstant',
+      'main:dsh-assisstant', 'plugins.bundle.config:spa-assistant', 'sidebar.panellist:dsh-assisstant',
     ])
   })
 
@@ -476,7 +476,7 @@ describe('the browser half', () => {
   it('lets a number be emptied and retyped, and corrects it when the field is left', async () => {
     const { form, mutations } = fakeForm({ compactRatio: 0.75, balanceCheckMinutes: 30, balanceThreshold: 10 })
     const { find } = loadClient(form)
-    const Settings = find('plugins.bundle.config', '@starsharryzhu/dsh-assistant')
+    const Settings = find('plugins.bundle.config', 'spa-assistant')
     render(<div><Settings view="page" /></div>)
     const minutes = screen.getByLabelText('每隔几分钟查一次余额') as HTMLInputElement
     fireEvent.focus(minutes)
@@ -540,7 +540,7 @@ describe('the browser half', () => {
     const buttons = screen.getAllByRole('button').map(button => button.textContent)
     expect(buttons.slice(buttons.indexOf('保存'), buttons.indexOf('保存') + 3)).toEqual(['保存', '通用设置', '删除这个助理'])
     fireEvent.click(screen.getByText('通用设置'))
-    expect(opened).toEqual(['@starsharryzhu/dsh-assistant'])
+    expect(opened).toEqual(['spa-assistant'])
   })
 
   it('leaves the shared settings button out on a host without plugin navigation', () => {
@@ -640,7 +640,7 @@ describe('the browser half', () => {
   it('draws the settings summary', () => {
     const { form } = fakeForm({ compactRatio: 0.75 })
     const { find } = loadClient(form)
-    const Settings = find('plugins.bundle.config', '@starsharryzhu/dsh-assistant')
+    const Settings = find('plugins.bundle.config', 'spa-assistant')
     render(<div><Settings view="summary" /></div>)
     expect(screen.getByText('上下文达到 75% 自动整理')).toBeTruthy()
   })
@@ -648,7 +648,7 @@ describe('the browser half', () => {
   it('keeps only the shared settings on the Plugins screen', () => {
     const { form } = fakeForm({ people: [] })
     const { find } = loadClient(form)
-    const Settings = find('plugins.bundle.config', '@starsharryzhu/dsh-assistant')
+    const Settings = find('plugins.bundle.config', 'spa-assistant')
     render(<div><Settings view="page" /></div>)
     for (const title of ['模型', '自动整理对话', '余额提醒', '人设与画像']) expect(screen.getByText(title)).toBeTruthy()
     for (const title of ['工作区', '日程与主动提醒', '看门狗', '微信', '对话用的模型']) expect(screen.queryByText(title)).toBeNull()
@@ -659,7 +659,7 @@ describe('the browser half', () => {
     const catalog = { groups: [{ id: 'deepseek-account', name: 'DeepSeek', models: [{ id: 'deepseek-flash', name: 'Flash' }, { id: 'deepseek-pro', name: 'Pro' }] }] }
     const remote = { session: { modelCatalog: async () => ({ ok: true, value: catalog }) } }
     const { find } = loadClient(form, { remote, 'remote.session': remote.session })
-    const Settings = find('plugins.bundle.config', '@starsharryzhu/dsh-assistant')
+    const Settings = find('plugins.bundle.config', 'spa-assistant')
     render(<div><Settings view="page" /></div>)
     await screen.findByText('Flash')
     expect(screen.getByText('worker模型选择')).toBeTruthy()
