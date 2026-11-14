@@ -1,0 +1,103 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import { PACKAGE_NAME, PLUGIN_ID } from '../src/shared/settings.ts'
+import { SILENT_REPLY } from '../src/shared/silent.ts'
+
+const ROOT = join(import.meta.dirname, '..')
+const patch = readFileSync(join(ROOT, 'cordis.patch.yml'), 'utf8')
+const manifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as Record<string, unknown> & {
+  dependencies: Record<string, string>
+  engines: Record<string, string>
+  exports: Record<string, unknown>
+  dsh: { bundle: { patch: string }; client: { platform: string; inject: string[] } }
+}
+
+/** The patch text from one row's `- id:` line to the next top-level row. */
+function row(id: string): string {
+  const start = patch.indexOf(`    - id: ${id}\n`)
+  expect(start, `row ${id}`).toBeGreaterThanOrEqual(0)
+  const next = patch.indexOf('\n    - id: ', start + 1)
+  return next < 0 ? patch.slice(start) : patch.slice(start, next + 1)
+}
+
+describe('the bundle patch', () => {
+  it('inserts the settings row, the sub-plugin group, and the two hidden presets', () => {
+    expect([...patch.matchAll(/^ {4}- id: (\S+)$/gmu)].map(match => match[1])).toEqual([
+      'dsh-assisstant', 'dsh-assisstant-subplugins', 'preset-dsh-assisstant', 'preset-dsh-assisstant-worker',
+    ])
+    expect(row('dsh-assisstant')).toContain("name: '@starsharryzhu/dsh-assistant'\n")
+  })
+
+  it('mounts every dependency in the group, limited to the user presets and guarded against a standalone copy', () => {
+    const group = row('dsh-assisstant-subplugins')
+    expect(group).toContain("name: '@starsharryzhu/dsh-assistant/bundle'")
+    expect(group).toContain('group: true')
+    for (const name of Object.keys(manifest.dependencies)) expect(group).toContain(`name: '${name}'\n`)
+    // The row ids stay unscoped: a standalone install keeps the same id the guard looks for.
+    for (const id of ['complete-subagent', 'im-robot']) expect(group).toContain(`e.options.id === '${id}' && !e.options.disabled`)
+    expect(group).toContain('presets: [dsh-assisstant, dsh-assisstant-worker]')
+    expect(group).toContain('childPreset: dsh-assisstant-worker')
+    expect(group).toContain('ownModel: false')
+    expect(group).toContain('presets: [dsh-assisstant]')
+    expect(group).toContain('autoPush: false')
+    expect(group).toContain(`silentReply: '${SILENT_REPLY}'`)
+  })
+
+  it('gives the router no writes, no shell, no web, no skills, and no official subagent tool', () => {
+    const router = row('preset-dsh-assisstant')
+    expect(router).toContain('id: dsh-assisstant\n')
+    for (const absent of ['dsh-tool-bash', 'dsh-tool-web', 'dsh-skill-filesystem', 'dsh-tool-skill', 'dsh-tool-subagent\'', 'dsh-tool-ask-user', 'dsh-persona']) {
+      expect(router).not.toContain(absent)
+    }
+    expect(router).toMatch(/dsh-tool-fs'\n {12}config:\n {14}write: false\n {14}edit: false/u)
+    // The heartbeat replaces the host's automation tasks, and the policy its clock of browser and device zones.
+    for (const absent of ['dsh-tool-schedule', 'dsh-time-context']) expect(router).not.toContain(absent)
+    expect(router).toContain("name: '@starsharryzhu/dsh-assistant/compactor'")
+    expect(router).toContain('role: router')
+  })
+
+  it('gives the worker the working tools with a 5-second shell', () => {
+    const worker = row('preset-dsh-assisstant-worker')
+    expect(worker).toContain('id: dsh-assisstant-worker\n')
+    expect(worker).toMatch(/dsh-bash-sandbox'\n {16}config:\n {18}timeoutMs: 5000/u)
+    expect(worker).toContain('waitTimeoutMs: 5000')
+    expect(worker).toContain('dsh-tool-web')
+    expect(worker).toContain('role: worker')
+    expect(worker).not.toContain('dsh-tool-subagent')
+    expect(worker).not.toContain('dsh-time-context')
+  })
+})
+
+describe('the manifest', () => {
+  it('pins the identity, the engine range, and the entries', () => {
+    expect(manifest.name).toBe('@starsharryzhu/dsh-assistant')
+    expect(manifest.version).toBe('0.3.0')
+    expect(manifest.license).toBe('MIT')
+    expect(manifest.engines.dsh).toBe('>=0.2.1-rc.5 <0.3.0-0')
+    const hostRanges = Object.values({ ...manifest.devDependencies, ...manifest.peerDependencies } as Record<string, string>).filter(range => range.includes('0.2.'))
+    expect(new Set(hostRanges)).toEqual(new Set(['>=0.2.1-rc.5 <0.3.0-0']))
+    expect(manifest.description).toContain('Requires DeepSeek Harness Desktop >=0.2.1-rc.5 <0.3.0')
+    expect(Object.keys(manifest.exports)).toEqual(expect.arrayContaining(['.', './bundle', './policy', './compactor', './client']))
+    expect(manifest.dsh.bundle.patch).toBe('./cordis.patch.yml')
+    expect(manifest.dsh.client.platform).toBe('web')
+  })
+
+  it('pins every sub-plugin to an exact version', () => {
+    expect(Object.keys(manifest.dependencies).sort()).toEqual(['@starsharryzhu/complete-subagent', '@starsharryzhu/im-robot'])
+    for (const version of Object.values(manifest.dependencies)) expect(version).toMatch(/^\d+\.\d+\.\d+$/u)
+  })
+
+  it('keeps the internal ids stable while the package name carries the scope', () => {
+    expect(PACKAGE_NAME).toBe(manifest.name)
+    expect(PLUGIN_ID).toBe('dsh-assisstant')
+    expect(manifest.name).not.toBe(PLUGIN_ID)
+  })
+
+  it('names its titles in both languages', () => {
+    const zh = JSON.parse(readFileSync(join(ROOT, 'locale', 'zh.json'), 'utf8')) as { meta: { title: string } }
+    const en = JSON.parse(readFileSync(join(ROOT, 'locale', 'en.json'), 'utf8')) as { meta: { title: string } }
+    expect(zh.meta.title).toBe('助理')
+    expect(en.meta.title).toBe('Assistant')
+  })
+})
