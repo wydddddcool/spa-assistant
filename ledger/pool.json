@@ -1,6 +1,5 @@
 {
   "tasks": {
-    "20261117-0722-50a4-把github趋势配置完": {"category": null, "created": "2026-11-17 07:22:06", "creator": "c380307a-1362-4226-ab05-0a87201ab0eb", "creator_name": "D", "finished": null, "owner": null, "owner_name": null, "started": null, "status": "open", "tags": ["趋势", "配置", "定时任务"], "title": "把GitHub趋势配置完", "updated": "2026-11-17 07:22:06", "worklog": "worklog/202611/17-0722-50a4-把github趋势配置完.md"}
   },
   "version": "20261022000000"
 }
